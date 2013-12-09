@@ -16,4 +16,12 @@
     <description>
         Life, the universe and everything we know it according to UP.
     </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
