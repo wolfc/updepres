@@ -19,28 +19,27 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.up.depres;
+package org.jboss.up.depres.resolver;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.up.depres.Universe;
+import org.jboss.up.depres.dpkg.AvailableReader;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class Universe {
-    private final Map<String, Package> packages = new HashMap<>();
-
-    private Package addPackage(final String name) {
-        assert !packages.containsKey(name) : "Universe already contains package " + name;
-        final Package pkg = new Package(this, name);
-        packages.put(name, pkg);
-        return pkg;
-    }
-
-    public Package pkg(final String name) {
-        final Package pkg = packages.get(name);
-        if (pkg != null)
-            return pkg;
-        return addPackage(name);
+public class Util {
+    static Universe universe(final String name) {
+        try {
+            final String fileName = new File(Util.class.getResource(name).toURI()).getAbsolutePath();
+            return AvailableReader.load(fileName);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

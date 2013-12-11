@@ -21,26 +21,20 @@
  */
 package org.jboss.up.depres;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class Universe {
-    private final Map<String, Package> packages = new HashMap<>();
+public class BreaksDependency extends AbstractDependency {
+    private final Package target;
+    private final Condition condition;
 
-    private Package addPackage(final String name) {
-        assert !packages.containsKey(name) : "Universe already contains package " + name;
-        final Package pkg = new Package(this, name);
-        packages.put(name, pkg);
-        return pkg;
+    BreaksDependency(final PackageVersion originator, final Package target, final String condition) {
+        super(originator);
+        this.target = target;
+        this.condition = condition != null ? Conditions.create(condition) : null;
     }
 
-    public Package pkg(final String name) {
-        final Package pkg = packages.get(name);
-        if (pkg != null)
-            return pkg;
-        return addPackage(name);
+    public Condition getCondition() {
+        return condition;
     }
 }

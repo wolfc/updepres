@@ -29,6 +29,12 @@
         <dependencies>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>dpkg</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>model</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -45,5 +51,6 @@
     <modules>
         <module>dpkg</module>
         <module>model</module>
+        <module>resolver</module>
     </modules>
 </project>

@@ -19,28 +19,38 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.up.depres;
+package org.jboss.up.depres.resolver;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.up.depres.PackageVersion;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class Universe {
-    private final Map<String, Package> packages = new HashMap<>();
+class PackageVersionMarker {
+    private final PackageVersion packageVersion;
+    private AbstractResolverException failure;
 
-    private Package addPackage(final String name) {
-        assert !packages.containsKey(name) : "Universe already contains package " + name;
-        final Package pkg = new Package(this, name);
-        packages.put(name, pkg);
-        return pkg;
+    PackageVersionMarker(PackageVersion packageVersion) {
+        this.packageVersion = packageVersion;
     }
 
-    public Package pkg(final String name) {
-        final Package pkg = packages.get(name);
-        if (pkg != null)
-            return pkg;
-        return addPackage(name);
+    public String getVersion() {
+        return packageVersion.getVersion();
+    }
+
+    public boolean hasFailed() {
+        return failure != null;
+    }
+
+    public void setFailure(final AbstractResolverException failure) {
+        this.failure = failure;
+    }
+
+    @Override
+    public String toString() {
+        return "PackageVersionMarker{" +
+                "packageVersion=" + packageVersion +
+                ", failure=" + failure +
+                '}';
     }
 }

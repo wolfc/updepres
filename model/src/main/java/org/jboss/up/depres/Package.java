@@ -21,17 +21,35 @@
  */
 package org.jboss.up.depres;
 
+import org.jboss.up.depres.version.VersionComparator;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import static java.util.Collections.reverseOrder;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
 public class Package {
+    private final Universe universe;
     private final String name;
-    private final Map<String, PackageVersion> versions = new HashMap<>();
+    private final SortedMap<String, PackageVersion> versions = new TreeMap<>(reverseOrder(VersionComparator.INSTANCE));
 
-    Package(String name) {
+//    private List<AbstractDependency> fulfillments = new ArrayList<>();
+
+    Collection<BreaksDependency> breakers = new ArrayList<>();
+    Collection<Provides> providers = new ArrayList<>();
+
+    Package(final Universe universe, final String name) {
+        this.universe = universe;
         this.name = name;
     }
 
@@ -40,5 +58,30 @@ public class Package {
         final PackageVersion pkgVersion = new PackageVersion(this, version);
         versions.put(version, pkgVersion);
         return pkgVersion;
+    }
+
+    public Collection<BreaksDependency> getBreakers() {
+        return Collections.unmodifiableCollection(breakers);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Collection<Provides> getProviders() {
+        return Collections.unmodifiableCollection(providers);
+    }
+
+    public Universe getUniverse() {
+        return universe;
+    }
+
+    public SortedMap<String, PackageVersion> getVersions() {
+        return Collections.unmodifiableSortedMap(versions);
+    }
+
+    @Override
+    public String toString() {
+        return "package " + name;
     }
 }

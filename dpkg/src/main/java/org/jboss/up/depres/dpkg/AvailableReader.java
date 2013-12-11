@@ -21,20 +21,28 @@
  */
 package org.jboss.up.depres.dpkg;
 
-import org.jboss.up.depres.Universe;
+import org.jboss.up.depres.*;
+import org.jboss.up.depres.Package;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.LineNumberReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
 public class AvailableReader {
+    private static final Logger LOG = Logger.getLogger(AvailableReader.class.getName());
+
     // ignore the following relationship directives: Enhances, Recommends, Suggests
     private static final Set<String> IGNORED_FIELDS = new HashSet<>(
             Arrays.asList("Architecture", "Bugs", "Built-Using", "Description-md5", "Enhances", "Essential", "Installed-Size", "Filename",
@@ -42,6 +50,37 @@ public class AvailableReader {
                     "Maintainer", "MD5sum", "Npp-Applications", "Multi-Arch", "Npp-Description", "Npp-File", "Npp-Filename", "Npp-Mimetype", "Npp-Name", "Origin", "Orig-Maintainer", "Original-Maintainer",
                     "Priority", "Python-Version", "Python3-Version", "Recommends", "Section", "SHA1",
                     "SHA256", "Size", "Source", "Suggests", "Supported", "Tag", "Task", "Xul-Appid"));
+
+    static class PackageVersionDeclaration {
+        final String name;
+        String breaks;
+        String depends;
+        String version;
+        String provides;
+
+        PackageVersionDeclaration(final String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return "Package " + name;
+        }
+    }
+
+    private static Dependency dependency(final PackageVersion dependent, final String expr) {
+        final int i = expr.indexOf('(');
+        final String condition;
+        final String providerName;
+        if (i != -1) {
+            condition = expr.substring(i + 1, expr.length() - 1);
+            providerName = expr.substring(0, i - 1).trim();
+        } else {
+            condition = null;
+            providerName = expr;
+        }
+        return new Dependency(dependent, dependent.getUniverse().pkg(providerName), condition);
+    }
 
     private static Iterable<String> each(final StringTokenizer tokenizer) {
         return new Iterable<String>() {
@@ -67,15 +106,20 @@ public class AvailableReader {
         };
     }
 
-    public static void main(final String[] args) throws Exception {
+    public static Universe load() throws IOException {
+        return load("/var/lib/dpkg/available");
+    }
+
+    public static Universe load(final String fileName) throws IOException {
         final Universe universe = new Universe();
-        final LineNumberReader reader = new LineNumberReader(new FileReader("/var/lib/dpkg/available"));
-        org.jboss.up.depres.Package currentPkg = null;
+        final LineNumberReader reader = new LineNumberReader(new FileReader(fileName));
+        PackageVersionDeclaration currentPkg = null;
         String line = "";
         try {
             while((line = reader.readLine()) != null) {
                 //System.out.println(line);
                 if (line.length() == 0) {
+                    process(universe, currentPkg);
                     currentPkg = null;
                     continue;
                 }
@@ -87,7 +131,7 @@ public class AvailableReader {
                 if (IGNORED_FIELDS.contains(field))
                     continue;
                 if (field.equals("Breaks")) {
-                    // TODO
+                    currentPkg.breaks = data;
                 } else if (field.equals("Conflicts")) {
                     // TODO
                 } else if (field.equals("Description")) {
@@ -103,37 +147,85 @@ public class AvailableReader {
                         }
                     } while(true);
                 } else if (field.equals("Depends")) {
-                    // TODO
-                    System.out.println("Depends: " + data);
-                    final StringTokenizer stAnd = new StringTokenizer(data, ",");
-                    for (String s : each(stAnd)) {
-                        s = s.trim();
-                        System.out.println("  " + s);
-                        final StringTokenizer stOr = new StringTokenizer(s, "|");
-                        for (String sOr : each(stOr)) {
-                            sOr = sOr.trim();
-                            System.out.println("    " + sOr);
-                        }
-                    }
+                    currentPkg.depends = data;
                 } else if (field.equals("Pre-Depends")) {
                     // TODO
-                    // treat this a normal dependency for now
                 } else if (field.equals("Package")) {
                     assert currentPkg == null : "already processing package " + currentPkg;
-                    currentPkg = universe.addPackage(data);
+                    LOG.fine(data);
+                    currentPkg = new PackageVersionDeclaration(data);
                 } else if (field.equals("Provides")) {
-                    // TODO
+                    currentPkg.provides = data;
                 } else if (field.equals("Replaces")) {
                     // TODO
                 } else if (field.equals("Version")) {
-                    currentPkg.addVersion(data);
+                    currentPkg.version = data;
                 } else {
                     throw new IllegalStateException("Unknown field " + field);
                 }
             }
-        } catch (Exception e) {
-            System.err.println("Failed to process line #" + reader.getLineNumber() + ": " + line);
-            throw e;
+            if (currentPkg != null)
+                process(universe, currentPkg);
+            return universe;
+        } catch (IOException e) {
+            throw new IOException("Failed to process line #" + reader.getLineNumber() + ": " + line, e);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Failed to process line #" + reader.getLineNumber() + ": " + line, e);
+        }
+    }
+
+    public static void main(final String[] args) throws Exception {
+        load();
+    }
+
+    private static void process(final Universe universe, final PackageVersionDeclaration declaration) {
+        final Package pkg = universe.pkg(declaration.name);
+        final PackageVersion packageVersion = pkg.addVersion(declaration.version);
+        processBreaks(packageVersion, declaration.breaks);
+        processDepends(packageVersion, declaration.depends);
+        if (declaration.provides != null) {
+            final StringTokenizer st = new StringTokenizer(declaration.provides, ",");
+            for (String s : each(st)) {
+                packageVersion.addProvides(s.trim());
+            }
+        }
+    }
+
+    private static void processBreaks(final PackageVersion currentPackageVersion, final String data) {
+        if (data == null)
+            return;
+        final StringTokenizer st = new StringTokenizer(data, ",");
+        for (String s : each(st)) {
+            final int i = s.indexOf('(');
+            final String condition;
+            final String name;
+            if (i != -1) {
+                condition = s.substring(i + 1, s.length() - 1);
+                name = s.substring(0, i - 1).trim();
+            } else {
+                condition = null;
+                name = s;
+            }
+            currentPackageVersion.addBreaks(currentPackageVersion.getUniverse().pkg(name), condition);
+        }
+    }
+
+    private static void processDepends(final PackageVersion currentPackageVersion, final String data) {
+        if (data == null)
+            return;
+        LOG.fine("Depends: " + data);
+        final StringTokenizer stAnd = new StringTokenizer(data, ",");
+        for (String s : each(stAnd)) {
+            s = s.trim();
+            LOG.fine("  " + s);
+            final List<Dependency> dependencies = new ArrayList<>();
+            final StringTokenizer stOr = new StringTokenizer(s, "|");
+            for (String sOr : each(stOr)) {
+                sOr = sOr.trim();
+                LOG.fine("    " + sOr);
+                dependencies.add(dependency(currentPackageVersion, sOr));
+            }
+            currentPackageVersion.addDependency(dependencies);
         }
     }
 }

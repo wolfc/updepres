@@ -29,6 +29,8 @@ import java.util.Comparator;
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
 public class VersionComparator implements Comparator<String> {
+    public static final VersionComparator INSTANCE = new VersionComparator();
+
     @Override
     public int compare(final String v1, final String v2) {
         int i1 = 0, i2 = 0;
@@ -52,7 +54,7 @@ public class VersionComparator implements Comparator<String> {
             return epoch1 - epoch2;
 
         final int lim1 = v1.length(), lim2 = v2.length();
-        while (true) {
+        while (i1 < lim1 && i2 < lim2) {
             final char c1 = v1.charAt(i1);
             final char c2 = v2.charAt(i2);
             if (c1 == c2) {
@@ -72,5 +74,6 @@ public class VersionComparator implements Comparator<String> {
                 return c1 - c2;
             }
         }
+        return lim1 - lim2;
     }
 }

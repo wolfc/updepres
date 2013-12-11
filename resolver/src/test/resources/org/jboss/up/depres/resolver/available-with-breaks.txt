@@ -1,0 +1,13 @@
+Package: A
+Version: 1.0
+Depends: B, C
+
+Package: B
+Version: 1.1
+Breaks: C (= 1.1)
+
+Package: C
+Version: 1.0
+
+Package: C
+Version: 1.1

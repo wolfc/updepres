@@ -21,26 +21,33 @@
  */
 package org.jboss.up.depres;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class Universe {
-    private final Map<String, Package> packages = new HashMap<>();
+public class Dependency extends AbstractDependency {
+    private final Package provider;
+    private final String condition;
 
-    private Package addPackage(final String name) {
-        assert !packages.containsKey(name) : "Universe already contains package " + name;
-        final Package pkg = new Package(this, name);
-        packages.put(name, pkg);
-        return pkg;
+    @Deprecated // TODO: don't like this being public
+    public Dependency(final PackageVersion dependent, final Package provider, String condition) {
+        super(dependent);
+        this.provider = provider;
+        this.condition = condition;
     }
 
-    public Package pkg(final String name) {
-        final Package pkg = packages.get(name);
-        if (pkg != null)
-            return pkg;
-        return addPackage(name);
+    PackageVersion getDependent() {
+        return originator;
+    }
+
+    public Package getProvider() {
+        return provider;
+    }
+
+    @Override
+    public String toString() {
+        return "Dependency{" +
+                "provider=" + provider +
+                ", condition='" + condition + '\'' +
+                '}';
     }
 }

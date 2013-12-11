@@ -19,28 +19,21 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.up.depres;
+package org.jboss.up.depres.resolver;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.up.depres.Universe;
+import org.junit.Test;
+
+import static org.jboss.up.depres.resolver.Util.universe;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class Universe {
-    private final Map<String, Package> packages = new HashMap<>();
-
-    private Package addPackage(final String name) {
-        assert !packages.containsKey(name) : "Universe already contains package " + name;
-        final Package pkg = new Package(this, name);
-        packages.put(name, pkg);
-        return pkg;
-    }
-
-    public Package pkg(final String name) {
-        final Package pkg = packages.get(name);
-        if (pkg != null)
-            return pkg;
-        return addPackage(name);
+public class BreaksTestCase {
+    @Test
+    public void testBreaks() throws Exception {
+        final Universe universe = universe("available-with-breaks.txt");
+        final Resolver resolver = new Resolver(universe);
+        resolver.install(universe.pkg("A"));
     }
 }

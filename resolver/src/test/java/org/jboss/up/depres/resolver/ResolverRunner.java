@@ -19,28 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jboss.up.depres;
+package org.jboss.up.depres.resolver;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jboss.up.depres.Universe;
+import org.jboss.up.depres.dpkg.AvailableReader;
+
+import java.io.IOException;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class Universe {
-    private final Map<String, Package> packages = new HashMap<>();
-
-    private Package addPackage(final String name) {
-        assert !packages.containsKey(name) : "Universe already contains package " + name;
-        final Package pkg = new Package(this, name);
-        packages.put(name, pkg);
-        return pkg;
-    }
-
-    public Package pkg(final String name) {
-        final Package pkg = packages.get(name);
-        if (pkg != null)
-            return pkg;
-        return addPackage(name);
+public class ResolverRunner {
+    public static void main(final String[] args) throws Exception {
+        final Universe universe = AvailableReader.load();
+        final Resolver resolver = new Resolver(universe);
+        resolver.install(universe.pkg("gnome-power-manager"));
     }
 }

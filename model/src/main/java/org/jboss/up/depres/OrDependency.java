@@ -21,26 +21,22 @@
  */
 package org.jboss.up.depres;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-public class Universe {
-    private final Map<String, Package> packages = new HashMap<>();
+public class OrDependency extends AbstractDependency {
+    private List<Dependency> dependencies;
 
-    private Package addPackage(final String name) {
-        assert !packages.containsKey(name) : "Universe already contains package " + name;
-        final Package pkg = new Package(this, name);
-        packages.put(name, pkg);
-        return pkg;
+    OrDependency(final PackageVersion dependent, final List<Dependency> dependencies) {
+        super(dependent);
+        this.dependencies = new ArrayList<>(dependencies);
     }
 
-    public Package pkg(final String name) {
-        final Package pkg = packages.get(name);
-        if (pkg != null)
-            return pkg;
-        return addPackage(name);
+    public List<Dependency> getDependencies() {
+        return Collections.unmodifiableList(dependencies);
     }
 }
