@@ -70,6 +70,8 @@ public class VersionComparator implements Comparator<String> {
                     return n1 - n2;
                 i1 = ei1;
                 i2 = ei2;
+                if (i1 != i2)
+                    return i2 - i1;
             } else {
                 return c1 - c2;
             }

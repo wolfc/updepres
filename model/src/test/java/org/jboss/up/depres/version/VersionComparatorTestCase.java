@@ -45,4 +45,22 @@ public class VersionComparatorTestCase {
     public void testEpoch() {
         assertTrue(VERSION_COMPARATOR.compare("0:1", "1:1") < 0);
     }
+
+    @Test
+    public void testIssue1() {
+        System.out.println("** " + VERSION_COMPARATOR.compare("2.1.9.redhat-001", "2.1.9.redhat-1"));
+        assertTrue(VERSION_COMPARATOR.compare("2.1.9.redhat-001", "2.1.9.redhat-1") < 0);
+    }
+
+    @Test
+    public void testIssue1b() {
+        System.out.println("** " + VERSION_COMPARATOR.compare("2.1.9.redhat-001", "2.1.9.redhat-2"));
+        assertTrue(VERSION_COMPARATOR.compare("2.1.9.redhat-001", "2.1.9.redhat-2") < 0);
+    }
+
+    @Test
+    public void testIssue1c() {
+        System.out.println("** " + VERSION_COMPARATOR.compare("2.1.9.redhat-1", "2.1.9.redhat-002"));
+        assertTrue(VERSION_COMPARATOR.compare("2.1.9.redhat-1", "2.1.9.redhat-002") < 0);
+    }
 }
