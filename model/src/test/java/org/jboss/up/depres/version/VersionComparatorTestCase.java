@@ -63,4 +63,10 @@ public class VersionComparatorTestCase {
         System.out.println("** " + VERSION_COMPARATOR.compare("2.1.9.redhat-1", "2.1.9.redhat-002"));
         assertTrue(VERSION_COMPARATOR.compare("2.1.9.redhat-1", "2.1.9.redhat-002") < 0);
     }
+
+    @Test
+    public void version10isLargerThen1() {
+        assertTrue(VERSION_COMPARATOR.compare("1.0", "10.0") < 0);
+        assertTrue(VERSION_COMPARATOR.compare("1.1", "1.10") < 0);
+    }
 }
